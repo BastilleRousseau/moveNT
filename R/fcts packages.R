@@ -25,7 +25,6 @@
 sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, ncore=200,spacecore=200, seq_visit=sample(1:npatches, nswitch, replace=T), 
                   stepDist= "gamma", angleDist = "vm",  stepPar = c(0.5,3,1,5), anglePar = c(pi,0,0.5,2), s=diag(40,2), grph=F) {
   if(require("adehabitatLT") & require("moveHMM")){
-    print("Packages are loaded correctly")
   } else {
     print("trying to install R2jags")
     install.packages(c("adehabitatLT", "moveHMM"))
