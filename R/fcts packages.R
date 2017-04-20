@@ -86,7 +86,7 @@ sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, nco
 #' traj1<-sim_mov(type="OU", npatches=3, grph=T)
 #' adj<-traj2adj(traj1, res=100)
 
-traj2adj<-function(mov, res=100) {
+traj2adj<-function(mov, res=100, grid=NULL) {
   if(require("adehabitatLT") & require("raster")){
     } else {
     print("trying to install packages")
@@ -99,19 +99,24 @@ traj2adj<-function(mov, res=100) {
   }
   mov<-ld(mov)
   mov[,13]<-1:nrow(mov)
-  tt<-SpatialPoints(mov[,1:2]) # HERE ADJUST FOR NA 
+  tt<-SpatialPoints(mov[,1:2]) 
   tt1<-apply(coordinates(tt), 2, min)
   tt2<-apply(coordinates(tt), 2, max)
-  ras<-raster(xmn=floor(tt1[1]), ymn=floor(tt1[2]),xmx=ceiling(tt2[1]), ymx=ceiling(tt2[2]), res=res)
+  if(is.null(grid)){ras<-raster(xmn=floor(tt1[1]), ymn=floor(tt1[2]),xmx=ceiling(tt2[1]), ymx=ceiling(tt2[2]), res=res)}
+  if(!is.null(grid)){ras<-crop(grid, tt)}
   values(ras)<-1:ncell(ras)
   patch<-rasterize(tt, ras, field=mov[,13], fun = function(x, ...) round(mean(x)), na.rm=T)
-  mov$pix_start<-extract(ras,tt)
+   mov$pix_start2<-extract(ras,tt)
+ mov$pix_start<-as.numeric(as.factor(mov$pix_start2))
+ tt<-values(patch)
+ tt[!is.na(tt)]<-1:max(mov$pix_start, na.rm=T)
+ values(patch)<-tt
   mov$pix_end<-c(mov$pix_start[-1], NA)
   mov$trans<-paste(mov$pix_start, mov$pix_end, sep="_")
   tab<-data.frame(table(mov$trans))
   mov<-merge(mov, tab, by.x="trans", by.y="Var1", all.x=T) # Weights
   mov2<-mov[!duplicated(mov$trans),]
-  mat<-matrix(0, nrow=ncell(ras), ncol=ncell(ras))
+  mat<-matrix(0, nrow=max(mov2$pix_start,na.rm=T), ncol=max(mov2$pix_end, na.rm=T))
   for (i in 1:nrow(mov2)) {
     mat[mov2$pix_start[i], mov2$pix_end[i]]<-mov2$Freq[i]
   }
@@ -125,7 +130,7 @@ traj2adj<-function(mov, res=100) {
 #' Calculation of network metrics
 #'
 #' Transform an adjancency matrix to a series of network metrics at the node-level (weight, degree, betweenness, transitivity, eccenctricity) and graph level (diameter, transitivity, density, and modularity)
-#' @param adjmov Adjacency matrix, need to be an object of class adjmov
+#' @param adjmov Adjacency matrix, need to be an object produced by function traj2adj
 #' @param grph Whether node level metrics are to be plotted 
 #' @keywords traj2adj
 #' @return A raster stack object
@@ -147,17 +152,26 @@ adj2stack<-function(adjmov, grph=T) {
   }
   g<-graph_from_adjacency_matrix(adjmov[[1]], mode="directed", weighted = T)
   grid<-stack(adjmov[[3]])
-  grid[[2]]<-setValues(grid[[1]], rowSums(adjmov[[1]])/sum(adjmov[[1]]))
-  grid[[3]]<-setValues(grid[[1]], degree(g))
-  grid[[4]]<-setValues(grid[[1]], betweenness(g))
-  grid[[5]]<-setValues(grid[[1]], transitivity(g, type="local")) # Weird so far
-  grid[[6]]<-setValues(grid[[1]], eccentricity(g))
+  tt<-values(grid)
+  tt[!is.na(tt)]<-rowSums(adjmov[[1]])/sum(adjmov[[1]])
+  grid[[2]]<-setValues(grid[[1]], tt)
+  tt<-values(grid[[1]])
+  tt[!is.na(tt)]<-degree(g)
+  grid[[3]]<-setValues(grid[[1]], tt)
+  tt<-values(grid[[1]])
+  tt[!is.na(tt)]<-betweenness(g)
+  grid[[4]]<-setValues(grid[[1]], tt)
+  tt<-values(grid[[1]])
+  tt[!is.na(tt)]<-transitivity(g, type="local")
+  grid[[5]]<-setValues(grid[[1]], tt)
+  tt<-values(grid[[1]])
+  tt[!is.na(tt)]<-eccentricity(g)
+  grid[[6]]<-setValues(grid[[1]], tt)
   grid[[7]]<-setValues(grid[[1]], diameter(g))
   grid[[8]]<-setValues(grid[[1]], transitivity(g, type="global"))
   grid[[9]]<-setValues(grid[[1]], edge_density(g))
   grid[[10]]<-setValues(grid[[1]], modularity(cluster_walktrap(g)))
   names(grid)<- c("Actual","Weight", "Degree", "Betweenness", "Transitivity", "Eccentricity",  "Diameter", "Global transitivity", "Density", "Modularity")
-  
   if(grph==T) plot(grid[[2:6]])
   return(grid)
 }
