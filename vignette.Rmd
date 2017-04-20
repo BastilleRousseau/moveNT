@@ -3,8 +3,8 @@ title: "Vignette moveNT"
 author: "Guillaume Bastille-Rousseau"
 date: "April 18, 2017"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 
@@ -27,7 +27,7 @@ library(igraph)
 
 # Simulating movement strategies  - *sim_mov*
 
-The function *sim_mov* generates movement trajectories including patches and movement between patches. Movement within patches can follow an ornstein uhlenbeck process (based on *simm.mou* function from package *adehabitatLT*) or two-states movement model (based on *simmData* function from package *moveHMM*). Movement between patches is following a brownian bridge movement model (based on *simm.bb* function from package *adehabitatLT*). Generated outputs are of the class *ltraj* from package *adehabitatlt*.<br> <br>
+The function *sim_mov* generates movement trajectories including patches and movement between patches. Movement within patches can follow an Ornstein-Uhlenbeck process (based on *simm.mou* function from package *adehabitatLT*) or two-states movement model (based on *simmData* function from package *moveHMM*). Movement between patches is following a brownian bridge movement model (based on *simm.bb* function from package *adehabitatLT*). Generated outputs are of the class *ltraj* from package *adehabitatlt*.<br> <br>
 \newline
 
 ``` {r eval=T}
@@ -37,7 +37,7 @@ mig
 head(ld(mig))
 plot(mig)
 
-# Simulating multi-patches movement with ornstein uhlenbeck process 
+# Simulating multi-patches movement with Ornstein-Uhlenbeck process 
 patches<-sim_mov(nswitch=25, ncore=150, ratio=5, type="OU", npatches=5, grph=T)
 
 # Simulating sedentary movement
@@ -46,20 +46,20 @@ seden<-sim_mov(type="OU", npatches=10, spacecore=12, ratio=3, nswitch=150, ncore
 ```
 
 
-# Converting movement to adjancency matrix  - *traj2adj*
+# Converting movement to adjacency matrix  - *traj2adj*
 
-The function *traj2adj* convert a trajectory object of class *ltraj* to an adjacency matrix. This is done by overlapping a grid over the relocation data and tallying the number of transitions between each pixels. User needs to specify the grid size, which can be based on distance travelled. The function *quant* is a wrapper that allows to sample a quantile of step length distribution from a ltraj object. Output produced by *traj2adj* is a list containing the adjacency matrix, the grid used (raster format), and a raster indicating pixel numbers that are occupied. These rasters are used by other functions such as *adj2stack* and *clustnet*. <br> <br>
+The function *traj2adj* converts a trajectory object of class *ltraj* to an adjacency matrix. This is done by overlapping a grid over the relocation data and tallying the number of transitions among each pixel. Users need to specify the grid size, which can be based on distance travelled. The function *quant* is a wrapper that allows to sample a quantile of step length distribution from a *ltraj* object. Output produced by *traj2adj* is a list containing the adjacency matrix, the grid used (raster format), and a raster indicating pixel numbers that are occupied. These rasters are used by other functions such as *adj2stack* and *clustnet*. <br> <br>
 \newline
 
 ``` {r eval=T}
 # Using sedentary movement and user specific grid-size 
-adj_seden<-traj2adj(seden, res=150) #Pixel size of 100m 
+adj_seden<-traj2adj(seden, res=150) #Pixel size of 150m 
 adj_seden[[1]] # Adjency matrix 
 plot(adj_seden[[2]]) #Plot grid used
 
-# Using patches movement and median distance travel 
+# Using multi-patches movement and median distance travelled 
 adj_patches<-traj2adj(patches, res=quant(patches, p=0.5)) #Grid size based on median
-dim(adj_patches[[1]]) # Adjency matrix 
+dim(adj_patches[[1]]) # Size of the adjacency matrix 
 plot(adj_patches[[2]]) #Plot grid used
 plot(adj_patches[[3]]) #Plot occupied pixels 
 ```
@@ -67,11 +67,11 @@ plot(adj_patches[[3]]) #Plot occupied pixels
 
 # Calculation of network metrics  - *adj2stack*
 
-The function *adj2stack* takes the output of function *traj2adj* and calculate a series of node and graph-level metrics. Each metric is stored as a individual raster and the output is a raster stack combining each metric. Graph-level metric are also stored as a raster, containing an unique value. The function *graphmet* extracts graph level metrics. The function *val* extracts only the occupied cell (remove NA) in a raster and allow the calculation of statistics from node-level metrics. <br> <br>
+The function *adj2stack* takes the output of function *traj2adj* and calculates a series of node- and graph-level metrics. Each metric is stored as a individual raster and the output is a raster stack combining each metric. Graph-level metrics are also stored as a raster, each containing an unique value. The function *graphmet* extracts graph-level metrics. The function *val* extracts only the occupied cells (remove NA) in a raster and allows the calculation of statistics from node-level metrics. <br> <br>
 \newline  
 
 ``` {r eval=T}
-# Using patches movement and median distance travel 
+# Using multi-patches movement and median distance travelled 
 stck<-adj2stack(adj_patches,grph=T) #Plot the node-level metrics at the same time 
 plot(stck) #Plot also the graph-level metrics (not really useful)
 plot(stck[[3]]) #Plot only one metric (degree)
@@ -85,7 +85,7 @@ The function *clustnet* applies a normal mixture model to node-level metrics in 
 \newline
 
 ``` {r eval=T}
-# Using patches movement and median distance travel 
+# Using multi-patches movement and median distance travelled 
 clust2<-clustnet(stck, id=3, nclust=2) # Clustering of degree in two groups
 clust3<-clustnet(stck, id=4, nclust=3) #Clustering of betweenness in three groups 
 summary(clust2[[1]])

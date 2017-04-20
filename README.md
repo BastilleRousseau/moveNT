@@ -19,6 +19,7 @@ You need to use the package `devtools`from Hadley Wickham.
 ## Getting started ##
 
 The package main functions are `traj2adj` and `adj2stack`. The package also contains a function to simulate movement data `sim_mov`. For a list of documented functions see the Reference manual. 
+For examples of how to use the main functions, you can also look at the vignette. 
 
 Alternatively, here is a quick example to get you going: 
 
