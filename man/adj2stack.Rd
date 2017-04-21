@@ -7,7 +7,7 @@
 adj2stack(adjmov, grph = T)
 }
 \arguments{
-\item{adjmov}{Adjacency matrix, need to be an object of class adjmov}
+\item{adjmov}{Adjacency matrix, need to be an object produced by function traj2adj}
 
 \item{grph}{Whether node level metrics are to be plotted}
 }

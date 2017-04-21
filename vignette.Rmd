@@ -3,8 +3,8 @@ title: "Vignette moveNT"
 author: "Guillaume Bastille-Rousseau"
 date: "April 18, 2017"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 
@@ -62,6 +62,12 @@ adj_patches<-traj2adj(patches, res=quant(patches, p=0.5)) #Grid size based on me
 dim(adj_patches[[1]]) # Size of the adjacency matrix 
 plot(adj_patches[[2]]) #Plot grid used
 plot(adj_patches[[3]]) #Plot occupied pixels 
+
+
+# Using user defined grid
+ras<-raster(nrows=10, ncols=10, xmn=0, ymn=0, xmx=6000, ymx=6000)
+adj_patches2<-traj2adj(patches, res=quant(patches, p=0.5), grid=ras) #Grid size based on median
+plot(adj_patches2[[2]]) #Crop version of the grid created 
 ```
 
 

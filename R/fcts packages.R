@@ -79,12 +79,15 @@ sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, nco
 #' Transform an ltraj object to an adjacency matrix using a user-specified grid size
 #' @param mov Movement trajectory, need to be a ltraj object
 #' @param res Grid size
+#' @param grid User specified grid (a raster), needs to have a larger extent than the movement trajectory
 #' @keywords adj2stack
 #' @return A list of object containing the adjacency matrix, the grid use, and patch/corridor identification (only useful if sim_mov was used)
 #' @export
 #' @examples
 #' traj1<-sim_mov(type="OU", npatches=3, grph=T)
 #' adj<-traj2adj(traj1, res=100)
+
+
 
 traj2adj<-function(mov, res=100, grid=NULL) {
   if(require("adehabitatLT") & require("raster")){

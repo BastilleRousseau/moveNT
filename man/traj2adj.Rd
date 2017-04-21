@@ -4,12 +4,14 @@
 \alias{traj2adj}
 \title{Generation of adjacency matrix from movement data}
 \usage{
-traj2adj(mov, res = 100)
+traj2adj(mov, res = 100, grid = NULL)
 }
 \arguments{
 \item{mov}{Movement trajectory, need to be a ltraj object}
 
 \item{res}{Grid size}
+
+\item{grid}{User specified grid (a raster), needs to have a larger extent than the movement trajectory}
 }
 \value{
 A list of object containing the adjacency matrix, the grid use, and patch/corridor identification (only useful if sim_mov was used)
