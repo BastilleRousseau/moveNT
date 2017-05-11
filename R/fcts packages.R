@@ -24,16 +24,7 @@
 
 sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, ncore=200,spacecore=200, seq_visit=sample(1:npatches, nswitch, replace=T), 
                   stepDist= "gamma", angleDist = "vm",  stepPar = c(0.5,3,1,5), anglePar = c(pi,0,0.5,2), s=diag(40,2), grph=F) {
-  if(require("adehabitatLT") & require("moveHMM")){
-  } else {
-    print("trying to install R2jags")
-    install.packages(c("adehabitatLT", "moveHMM"))
-    if(require("adehabitatLT") & require("moveHMM")){
-      print("Packages installed and loaded")
-    } else {
-      stop("Could not install required packages (moveHMM or adehabitatLT")
-    }
-  }
+
   coordx<-sample(seq(0,20,2), npatches, replace=F)*spacecore
   coordy<-sample(seq(0,20,2), npatches, replace=F)*spacecore
   nmig=ncore/ratio
@@ -41,21 +32,21 @@ sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, nco
   for (i in 1:(nswitch-1)){
     
     if(type=="2states") {
-      core<-simData(nbAnimals=1,nbStates=2,stepDist=stepDist,angleDist=angleDist,stepPar=stepPar, anglePar=anglePar,zeroInflation=F,obsPerAnimal=ncore)
+      core<-moveHMM::simData(nbAnimals=1,nbStates=2,stepDist=stepDist,angleDist=angleDist,stepPar=stepPar, anglePar=anglePar,zeroInflation=F,obsPerAnimal=ncore)
       corex<-core$x+coordx[seq_visit[i]]
       corey<-core$y+coordy[seq_visit[i]]
       Corri1<-rep(2, ncore)
     }
     
     if(type=="OU") {
-      core<-simm.mou(date=1:ncore, b=c(coordx[seq_visit[i]],coordy[seq_visit[i]]), s=s)  
+      core<-adehabitatLT::simm.mou(date=1:ncore, b=c(coordx[seq_visit[i]],coordy[seq_visit[i]]), s=s)  
       corex<-ld(core)$x
       corey<-ld(core)$y
       Corri1<-rep(2, ncore)
     }
     
     if(seq_visit[i] != seq_visit[i+1]) {
-      mig<-simm.bb(date=1:nmig, begin=c(tail(corex,1), tail(corey,1)), end=rnorm(2, c(coordx[seq_visit[i+1]],coordy[seq_visit[i+1]]), sd=25))
+      mig<-adehabitatLT::simm.bb(date=1:nmig, begin=c(tail(corex,1), tail(corey,1)), end=rnorm(2, c(coordx[seq_visit[i+1]],coordy[seq_visit[i+1]]), sd=25))
       Corri2<-rep(1, nmig)
       sub<-cbind(c(corex, ld(mig)$x), c(corey, ld(mig)$y), c(Corri1, Corri2))
       
@@ -67,7 +58,7 @@ sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, nco
     out<-rbind(out, sub)
   }
   names(out)<-c("x", "y", "Corri")
-  out<-as.ltraj(out[,1:2], as.POSIXct(1:nrow(out), origin = "1960-01-01", tz="GMT"), id="id", infolocs=data.frame(out$Corri))
+  out<-adehabitatLT::as.ltraj(out[,1:2], as.POSIXct(1:nrow(out), origin = "1960-01-01", tz="GMT"), id="id", infolocs=data.frame(out$Corri))
   if(grph==T) {plot(out)}
   return(out)
 }
@@ -90,19 +81,10 @@ sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, nco
 
 
 traj2adj<-function(mov, res=100, grid=NULL) {
-  if(require("adehabitatLT") & require("raster")){
-    } else {
-    print("trying to install packages")
-    install.packages(c("adehabitatLT", "raster"))
-    if(require("adehabitatLT") & require("raster")){
-      print("Packages installed and loaded")
-    } else {
-      stop("Could not install required packages (raster or adehabitatLT")
-    }
-  }
-  mov<-ld(mov)
+ 
+  mov<-adehabitatLT::ld(mov)
   mov[,13]<-1:nrow(mov)
-  tt<-SpatialPoints(mov[,1:2]) 
+  tt<-sp::SpatialPoints(mov[,1:2]) 
   tt1<-apply(coordinates(tt), 2, min)
   tt2<-apply(coordinates(tt), 2, max)
   if(is.null(grid)){ras<-raster(xmn=floor(tt1[1]), ymn=floor(tt1[2]),xmx=ceiling(tt2[1]), ymx=ceiling(tt2[2]), res=res)}
@@ -143,37 +125,28 @@ traj2adj<-function(mov, res=100, grid=NULL) {
 #' stck<-adj2stack(traj2adj(traj1, res=100), grph=T)
 
 adj2stack<-function(adjmov, grph=T) {
-  if(require("igraph") & require("raster")){
-    } else {
-    print("trying to install packages")
-    install.packages(c("igraph", "raster"))
-    if(require("igraph") & require ("raster")){
-      print("Packages installed and loaded")
-    } else {
-      stop("Could not install required packages (raster or igraph")
-    }
-  }
-  g<-graph_from_adjacency_matrix(adjmov[[1]], mode="directed", weighted = T)
+  
+  g<-igraph::graph_from_adjacency_matrix(adjmov[[1]], mode="directed", weighted = T)
   grid<-stack(adjmov[[3]])
   tt<-values(grid)
   tt[!is.na(tt)]<-rowSums(adjmov[[1]])/sum(adjmov[[1]])
   grid[[2]]<-setValues(grid[[1]], tt)
   tt<-values(grid[[1]])
-  tt[!is.na(tt)]<-degree(g)
+  tt[!is.na(tt)]<-igraph::degree(g)
   grid[[3]]<-setValues(grid[[1]], tt)
   tt<-values(grid[[1]])
-  tt[!is.na(tt)]<-betweenness(g)
+  tt[!is.na(tt)]<-igraph::betweenness(g)
   grid[[4]]<-setValues(grid[[1]], tt)
   tt<-values(grid[[1]])
-  tt[!is.na(tt)]<-transitivity(g, type="local")
+  tt[!is.na(tt)]<-igraph::transitivity(g, type="local")
   grid[[5]]<-setValues(grid[[1]], tt)
   tt<-values(grid[[1]])
-  tt[!is.na(tt)]<-eccentricity(g)
+  tt[!is.na(tt)]<-igraph::eccentricity(g)
   grid[[6]]<-setValues(grid[[1]], tt)
-  grid[[7]]<-setValues(grid[[1]], diameter(g))
-  grid[[8]]<-setValues(grid[[1]], transitivity(g, type="global"))
-  grid[[9]]<-setValues(grid[[1]], edge_density(g))
-  grid[[10]]<-setValues(grid[[1]], modularity(cluster_walktrap(g)))
+  grid[[7]]<-setValues(grid[[1]], igraph::diameter(g))
+  grid[[8]]<-setValues(grid[[1]], igraph::transitivity(g, type="global"))
+  grid[[9]]<-setValues(grid[[1]], igraph::edge_density(g))
+  grid[[10]]<-setValues(grid[[1]], igraph::modularity(igraph::cluster_walktrap(g)))
   names(grid)<- c("Actual","Weight", "Degree", "Betweenness", "Transitivity", "Eccentricity",  "Diameter", "Global transitivity", "Density", "Modularity")
   if(grph==T) plot(grid[[2:6]])
   return(grid)
@@ -197,21 +170,12 @@ adj2stack<-function(adjmov, grph=T) {
 #' summary(cl[[1]])
 
 clustnet<-function(stack, id=2, nclust=2, grph=T) {
-  if(require("mclust") & require("raster")){
-  } else {
-    print("trying to install packages")
-    install.packages(c("mclust", "raster"))
-    if(require("mclust") & require ("raster")){
-      print("Packages installed and loaded")
-    } else {
-      stop("Could not install required packages (raster or mclust")
-    }
-  }
+ 
   clip<-stack[[1]]*0+1
   clip1<-stack[[id]]*clip
   val<-values(clip1)
   valna<-val[!is.na(values(clip1))]
-  clust<-Mclust(valna, nclust) 
+  clust<-mclust::Mclust(valna, nclust) 
   val[!is.na(val)]<-clust$classification
   values(clip)<-val
   if (grph==T) plot(clip)
@@ -231,7 +195,7 @@ clustnet<-function(stack, id=2, nclust=2, grph=T) {
 #' traj1<-sim_mov(type="OU", npatches=3, grph=T)
 #' stck<-adj2stack(traj2adj(traj1, res=quant(traj1)), grph=T)
 
-quant<-function(x, p=0.5) {quantile(ld(x)$dist, probs=p, na.rm=T)}
+quant<-function(x, p=0.5) {quantile(adehabitatLT::ld(x)$dist, probs=p, na.rm=T)}
 
 
 #' Extract occupied cells in a raster object 
