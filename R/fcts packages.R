@@ -170,7 +170,16 @@ adj2stack<-function(adjmov, grph=T) {
 #' summary(cl[[1]])
 
 clustnet<-function(stack, id=2, nclust=2, grph=T) {
- 
+  if(require("mclust") & require("raster")){
+  } else {
+    print("trying to install packages")
+    install.packages(c("mclust", "raster"))
+    if(require("mclust") & require ("raster")){
+      print("Packages installed and loaded")
+    } else {
+      stop("Could not install required packages (raster or mclust")
+    }
+  }
   clip<-stack[[1]]*0+1
   clip1<-stack[[id]]*clip
   val<-values(clip1)
