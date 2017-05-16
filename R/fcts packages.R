@@ -132,23 +132,27 @@ adj2stack<-function(adjmov, grph=T) {
   tt[!is.na(tt)]<-rowSums(adjmov[[1]])/sum(adjmov[[1]])
   grid[[2]]<-setValues(grid[[1]], tt)
   tt<-values(grid[[1]])
-  tt[!is.na(tt)]<-igraph::degree(g)
+  tt[!is.na(tt)]<-diag(adjmov[[1]])/sum(adjmov[[1]])
   grid[[3]]<-setValues(grid[[1]], tt)
+  
   tt<-values(grid[[1]])
-  tt[!is.na(tt)]<-igraph::betweenness(g)
+  tt[!is.na(tt)]<-igraph::degree(g)
   grid[[4]]<-setValues(grid[[1]], tt)
   tt<-values(grid[[1]])
-  tt[!is.na(tt)]<-igraph::transitivity(g, type="local")
+  tt[!is.na(tt)]<-igraph::betweenness(g)
   grid[[5]]<-setValues(grid[[1]], tt)
   tt<-values(grid[[1]])
-  tt[!is.na(tt)]<-igraph::eccentricity(g)
+  tt[!is.na(tt)]<-igraph::transitivity(g, type="local")
   grid[[6]]<-setValues(grid[[1]], tt)
-  grid[[7]]<-setValues(grid[[1]], igraph::diameter(g))
-  grid[[8]]<-setValues(grid[[1]], igraph::transitivity(g, type="global"))
-  grid[[9]]<-setValues(grid[[1]], igraph::edge_density(g))
-  grid[[10]]<-setValues(grid[[1]], igraph::modularity(igraph::cluster_walktrap(g)))
-  names(grid)<- c("Actual","Weight", "Degree", "Betweenness", "Transitivity", "Eccentricity",  "Diameter", "Global transitivity", "Density", "Modularity")
-  if(grph==T) plot(grid[[2:6]])
+  tt<-values(grid[[1]])
+  tt[!is.na(tt)]<-igraph::eccentricity(g)
+  grid[[7]]<-setValues(grid[[1]], tt)
+  grid[[8]]<-setValues(grid[[1]], igraph::diameter(g))
+  grid[[9]]<-setValues(grid[[1]], igraph::transitivity(g, type="global"))
+  grid[[10]]<-setValues(grid[[1]], igraph::edge_density(g))
+  grid[[11]]<-setValues(grid[[1]], igraph::modularity(igraph::cluster_walktrap(g)))
+  names(grid)<- c("Actual","Weight", "Self-loop", "Degree", "Betweenness", "Transitivity", "Eccentricity",  "Diameter", "Global transitivity", "Density", "Modularity")
+  if(grph==T) plot(grid[[2:7]])
   return(grid)
 }
 
@@ -243,7 +247,7 @@ val<-function(grid, id) {
 
 
 graphmet<-function(grid) {
- values(grid[[7:10]])[1,]
+ values(grid[[8:11]])[1,]
 }
 
 
