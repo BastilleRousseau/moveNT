@@ -141,7 +141,7 @@ adj2stack<-function(adjmov, grph=T) {
   tt[!is.na(tt)]<-igraph::betweenness(g)
   grid[[5]]<-setValues(grid[[1]], tt)
   tt<-values(grid[[1]])
-  tt[!is.na(tt)]<-igraph::eigen_centrality(g)$vector
+  tt[!is.na(tt)]<-igraph::eigen_centrality(g, directed=)$vector
   grid[[6]]<-setValues(grid[[1]], tt)
   tt<-values(grid[[1]])
   tt[!is.na(tt)]<-igraph::transitivity(g, type="local")
