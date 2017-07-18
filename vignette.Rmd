@@ -3,8 +3,8 @@ title: "Vignette moveNT"
 author: "Guillaume Bastille-Rousseau"
 date: "April 18, 2017"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 
