@@ -117,6 +117,8 @@ traj2adj<-function(mov, res=100, grid=NULL) {
 #' Transform an adjancency matrix to a series of network metrics at the node-level (weight, degree, betweenness, transitivity, eccenctricity) and graph level (diameter, transitivity, density, and modularity)
 #' @param adjmov Adjacency matrix, need to be an object produced by function traj2adj
 #' @param grph Whether node level metrics are to be plotted 
+#' @param mode Whether the graph should be "directed" or "undirected. Default="directed". See "graph_from_adjacency_matrix" from package "igraph"
+#' @param weighted Whether the graph should be weighted (=TRUE) or unweighted (= NULL). Default is weighted. See "graph_from_adjacency_matrix" from package "igraph"
 #' @keywords traj2adj
 #' @return A raster stack object
 #' @export
@@ -124,9 +126,9 @@ traj2adj<-function(mov, res=100, grid=NULL) {
 #' traj1<-sim_mov(type="OU", npatches=3, grph=T)
 #' stck<-adj2stack(traj2adj(traj1, res=100), grph=T)
 
-adj2stack<-function(adjmov, grph=T) {
+adj2stack<-function(adjmov, grph=T, mode="directed", weighted=T, ...) {
   
-  g<-igraph::graph_from_adjacency_matrix(adjmov[[1]], mode="directed", weighted = T)
+  g<-igraph::graph_from_adjacency_matrix(adjmov[[1]], mode=mode, weighted = weighted)
   grid<-stack(adjmov[[3]])
   tt<-values(grid)
   tt[!is.na(tt)]<-rowSums(adjmov[[1]])/sum(adjmov[[1]])
@@ -141,20 +143,17 @@ adj2stack<-function(adjmov, grph=T) {
   tt[!is.na(tt)]<-igraph::betweenness(g)
   grid[[5]]<-setValues(grid[[1]], tt)
   tt<-values(grid[[1]])
-  tt[!is.na(tt)]<-igraph::eigen_centrality(g, directed=)$vector
+  tt[!is.na(tt)]<-igraph::transitivity(g, type="local")
   grid[[6]]<-setValues(grid[[1]], tt)
   tt<-values(grid[[1]])
-  tt[!is.na(tt)]<-igraph::transitivity(g, type="local")
-  grid[[7]]<-setValues(grid[[1]], tt)
-  tt<-values(grid[[1]])
   tt[!is.na(tt)]<-igraph::eccentricity(g)
-  grid[[8]]<-setValues(grid[[1]], tt)
-  grid[[9]]<-setValues(grid[[1]], igraph::diameter(g))
-  grid[[10]]<-setValues(grid[[1]], igraph::transitivity(g, type="global"))
-  grid[[11]]<-setValues(grid[[1]], igraph::edge_density(g))
-  grid[[12]]<-setValues(grid[[1]], igraph::modularity(igraph::cluster_walktrap(g)))
-  names(grid)<- c("Actual","Weight", "Self-loop", "Degree",  "Betweenness","Eigen centrality", "Transitivity", "Eccentricity",  "Diameter", "Global transitivity", "Density", "Modularity")
-  if(grph==T) plot(grid[[2:8]])
+  grid[[7]]<-setValues(grid[[1]], tt)
+  grid[[8]]<-setValues(grid[[1]], igraph::diameter(g))
+  grid[[9]]<-setValues(grid[[1]], igraph::transitivity(g, type="global"))
+  grid[[10]]<-setValues(grid[[1]], igraph::edge_density(g))
+  grid[[11]]<-setValues(grid[[1]], igraph::modularity(igraph::cluster_walktrap(g)))
+  names(grid)<- c("Actual","Weight", "Self-loop", "Degree",  "Betweenness", "Transitivity", "Eccentricity",  "Diameter", "Global transitivity", "Density", "Modularity")
+  if(grph==T) plot(grid[[2:7]])
   return(grid)
 }
 
@@ -249,7 +248,7 @@ val<-function(grid, id) {
 
 
 graphmet<-function(grid) {
- values(grid[[9:12]])[1,]
+ values(grid[[8:11]])[1,]
 }
 
 
