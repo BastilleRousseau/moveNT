@@ -6,9 +6,9 @@
 \usage{
 sim_mov(type = c("2states", "OU"), npatches = 5, ratio = 5,
   nswitch = 150, ncore = 200, spacecore = 200,
-  seq_visit = sample(1:npatches, nswitch, replace = T), stepDist = "gamma",
-  angleDist = "vm", stepPar = c(0.5, 3, 1, 5), anglePar = c(pi, 0, 0.5,
-  2), s = diag(40, 2), grph = F)
+  seq_visit = sample(1:npatches, nswitch, replace = T),
+  stepDist = "gamma", angleDist = "vm", stepPar = c(0.5, 3, 1, 5),
+  anglePar = c(pi, 0, 0.5, 2), s = diag(40, 2), grph = F)
 }
 \arguments{
 \item{type}{whether movement within patches should be based on a 2states process (from package moveHMM) or a Bivariate Ornstein-Uhlenbeck process (OU) (from package adehabitatLT)}

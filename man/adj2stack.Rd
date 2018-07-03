@@ -4,12 +4,16 @@
 \alias{adj2stack}
 \title{Calculation of network metrics}
 \usage{
-adj2stack(adjmov, grph = T)
+adj2stack(adjmov, grph = T, mode = "directed", weighted = T, ...)
 }
 \arguments{
 \item{adjmov}{Adjacency matrix, need to be an object produced by function traj2adj}
 
 \item{grph}{Whether node level metrics are to be plotted}
+
+\item{mode}{Whether the graph should be "directed" or "undirected. Default="directed". See "graph_from_adjacency_matrix" from package "igraph"}
+
+\item{weighted}{Whether the graph should be weighted (=TRUE) or unweighted (= NULL). Default is weighted. See "graph_from_adjacency_matrix" from package "igraph"}
 }
 \value{
 A raster stack object

@@ -1,3 +1,20 @@
+# #### Package creation
+# install.packages("devtools")
+# library("devtools")
+# devtools::install_github("klutometis/roxygen")
+# library(roxygen2)
+# create("moveNT")
+# setwd("./moveNT")
+# document()
+#
+# #Create pdf
+# pack <- "moveNT"
+# path <- find.package(pack)
+# system(paste(shQuote(file.path(R.home("bin"), "R")),"CMD", "Rd2pdf", shQuote(path)))
+#
+
+
+
 #' Simulation of patch-based movement trajectory
 #'
 #' Simulate a movement trajectory with user defined number of patches and interpatch movement
@@ -22,7 +39,7 @@
 #' traj2<-sim_mov(type="2states", npatches=2, grph=T)
 
 
-sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, ncore=200,spacecore=200, seq_visit=sample(1:npatches, nswitch, replace=T), 
+sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, ncore=200,spacecore=200, seq_visit=sample(1:npatches, nswitch, replace=T),
                   stepDist= "gamma", angleDist = "vm",  stepPar = c(0.5,3,1,5), anglePar = c(pi,0,0.5,2), s=diag(40,2), grph=F) {
 
   coordx<-sample(seq(0,20,2), npatches, replace=F)*spacecore
@@ -30,26 +47,26 @@ sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, nco
   nmig=ncore/ratio
   out<-data.frame()
   for (i in 1:(nswitch-1)){
-    
+
     if(type=="2states") {
       core<-moveHMM::simData(nbAnimals=1,nbStates=2,stepDist=stepDist,angleDist=angleDist,stepPar=stepPar, anglePar=anglePar,zeroInflation=F,obsPerAnimal=ncore)
       corex<-core$x+coordx[seq_visit[i]]
       corey<-core$y+coordy[seq_visit[i]]
       Corri1<-rep(2, ncore)
     }
-    
+
     if(type=="OU") {
-      core<-adehabitatLT::simm.mou(date=1:ncore, b=c(coordx[seq_visit[i]],coordy[seq_visit[i]]), s=s)  
+      core<-adehabitatLT::simm.mou(date=1:ncore, b=c(coordx[seq_visit[i]],coordy[seq_visit[i]]), s=s)
       corex<-ld(core)$x
       corey<-ld(core)$y
       Corri1<-rep(2, ncore)
     }
-    
+
     if(seq_visit[i] != seq_visit[i+1]) {
       mig<-adehabitatLT::simm.bb(date=1:nmig, begin=c(tail(corex,1), tail(corey,1)), end=rnorm(2, c(coordx[seq_visit[i+1]],coordy[seq_visit[i+1]]), sd=25))
       Corri2<-rep(1, nmig)
       sub<-cbind(c(corex, ld(mig)$x), c(corey, ld(mig)$y), c(Corri1, Corri2))
-      
+
     }
     if(seq_visit[i] == seq_visit[i+1]) {
       sub<-cbind(corex, corey, Corri1)
@@ -81,10 +98,10 @@ sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, nco
 
 
 traj2adj<-function(mov, res=100, grid=NULL) {
- 
+
   mov<-adehabitatLT::ld(mov)
   mov[,13]<-1:nrow(mov)
-  tt<-sp::SpatialPoints(mov[,1:2]) 
+  tt<-sp::SpatialPoints(mov[,1:2])
   tt1<-apply(coordinates(tt), 2, min)
   tt2<-apply(coordinates(tt), 2, max)
   if(is.null(grid)){ras<-raster(xmn=floor(tt1[1]), ymn=floor(tt1[2]),xmx=ceiling(tt2[1]), ymx=ceiling(tt2[2]), res=res)}
@@ -116,7 +133,7 @@ traj2adj<-function(mov, res=100, grid=NULL) {
 #'
 #' Transform an adjancency matrix to a series of network metrics at the node-level (weight, degree, betweenness, transitivity, eccenctricity) and graph level (diameter, transitivity, density, and modularity)
 #' @param adjmov Adjacency matrix, need to be an object produced by function traj2adj
-#' @param grph Whether node level metrics are to be plotted 
+#' @param grph Whether node level metrics are to be plotted
 #' @param mode Whether the graph should be "directed" or "undirected. Default="directed". See "graph_from_adjacency_matrix" from package "igraph"
 #' @param weighted Whether the graph should be weighted (=TRUE) or unweighted (= NULL). Default is weighted. See "graph_from_adjacency_matrix" from package "igraph"
 #' @keywords traj2adj
@@ -127,7 +144,7 @@ traj2adj<-function(mov, res=100, grid=NULL) {
 #' stck<-adj2stack(traj2adj(traj1, res=100), grph=T)
 
 adj2stack<-function(adjmov, grph=T, mode="directed", weighted=T, ...) {
-  
+
   g<-igraph::graph_from_adjacency_matrix(adjmov[[1]], mode=mode, weighted = weighted)
   grid<-stack(adjmov[[3]])
   tt<-values(grid)
@@ -157,11 +174,134 @@ adj2stack<-function(adjmov, grph=T, mode="directed", weighted=T, ...) {
   return(grid)
 }
 
+#' Looping over all individuals
+#'
+#' Extract adjancency matrix and calculate network metrics for all individuals in a trajectory object. Also calculate mean speed, mean direction, and dot product.
+#' @param traj An object produce by the function adj2stack
+#' @param res Grid size
+#' @keywords adj2stack traj2adj
+#' @return A list object containing a raster stack object for each individual
+#' @export
+#' @examples
+#' data(puechabonsp)
+#' locs <- puechabonsp$relocs
+#' xy <- coordinates(locs)
+#' df <- as.data.frame(locs)
+#' da <- as.character(df$Date)
+#' da <- as.POSIXct(strptime(as.character(df$Date),"%y%m%d", tz="Europe/Paris"))
+#' litr <- as.ltraj(xy, da, id = id)
+#' out1<-loop(litr)
+loop<-function(traj, res=100 ){
+  tt<-SpatialPoints(ld(traj)[,1:2])
+  tt1<-apply(coordinates(tt), 2, min)
+  tt2<-apply(coordinates(tt), 2, max)
+  ras<-raster(xmn=floor(tt1[1]), ymn=floor(tt1[2]),xmx=ceiling(tt2[1]), ymx=ceiling(tt2[2]), res=res)
+  id<-unique(id(traj))
+  id2<-id(traj)
+  out<-list()
+  for (i in 1:length(id)) {
+    try(out[[i]]<-adj2stack(traj2adj(traj[which(id2==id[i])], res=res, grid=ras), grph=F))
+    pt<-ld(traj[which(id2==id[i])])
+    points<-SpatialPoints(pt[,1:2])
+    try(out[[i]][[11]]<-rasterize(points, out[[i]][[1]], pt$dist, fun=mean))
+    try(out[[i]][[12]]<-rasterize(points, out[[i]][[1]], pt$abs.angle, fun=mean))
+    try(out[[i]][[13]]<-rasterize(points, out[[i]][[1]], pt$rel.angle, fun=dot))
+    cat(id[i], '\n')
+  }
+  return(out)
+  }
+
+#' Interpolation based on movement steps for all individuals
+#'
+#' Use movement steps to interpolate raster. User can extract the mean or max when multiple steps overlap in a single pixel. Function need to be applied followign the loop function.  This process is very slow
+#' @param traj An object produce by the function adj2stack
+#' @param ls An object produced by the loop
+#' @param wei Whether mean or max should be used for weight (default = mean)
+#' @param deg Whether mean or max should be used for degree (default = mean)
+#' @param bet Whether mean or max should be used for betweeness (default = max)
+#' @param spe Whether mean or max should be used for speed (default = mean)
+#' @param dt Whether mean, max, or dot produc should be used for turning angle (default = dot)
+#' @keywords adj2stack traj2adj loop
+#' @return A list object containing a raster stack object for each individual
+#' @export
+#' @examples
+#' data(puechabonsp)
+#' locs <- puechabonsp$relocs
+#' xy <- coordinates(locs)
+#' df <- as.data.frame(locs)
+#' da <- as.character(df$Date)
+#' da <- as.POSIXct(strptime(as.character(df$Date),"%y%m%d", tz="Europe/Paris"))
+#' litr <- as.ltraj(xy, da, id = id)
+#' out1<-loop(litr)
+#' out2<-interpolation(litr, out1)
+
+interpolation<-function(traj, ls, wei=mean, deg=mean, bet=max, spe=mean, dt=dot) {
+id<-unique(id(traj))
+id2<-id(traj)
+out_fill<-list()
+pb <- txtProgressBar(min = 1, max = length(id), style = 3)
+for (i in 1:length(id)) {
+  setTxtProgressBar(pb, i)
+  try({data<-ld(traj[which(id2==id[i])])
+  data2<-na.omit(cbind(data[,1],data[,2], data[,1]+data[,4],data[,2]+data[,5], data[,6:7], data[,9]))
+  steps<-SpatialLines(apply(data2, 1, function(r) {
+    Lines(list(sp::Line(cbind(r[c(1,3)], r[c(2,4)]))), uuid::UUIDgenerate())
+  }))
+  pts<-extract(ls[[i]], data2[,1:2])
+  weight<-rasterize(steps, ls[[i]][[1]], field=pts[,2], fun=wei)
+  degree<-rasterize(steps, ls[[i]][[1]], field=pts[,4], fun=deg)
+  between<-rasterize(steps, ls[[i]][[1]], field=pts[,5], fun=bet)
+  speed<-rasterize(steps, ls[[i]][[1]], field=data2$dist/data2$dt, fun=spe)
+  dotp<-rasterize(steps, ls[[i]][[1]], field=data2[,7], fun=dt)
+  out_fill[[i]]<-stack(weight, degree, between, speed, dotp)
+  })}
+return(out_fill)}
+
+
+#' Mosaic individuals together for a given variable
+#'
+#' Use output of loop or interpolation and combine all individuals (mosaic) together using the mean or max values.
+#' @param ls An object produced by the loop or interpolate functions
+#' @param index Index indicating which layer to take in the stack
+#' @param sc Whether to scale all individual rasters (default = TRUE)
+#' @param fun Whether mean or max should be used as the mosaic function (default = mean)
+#' @keywords adj2stack traj2adj loop
+#' @return A list object containing a raster stack object for each individual
+#' @export
+#' @examples
+#' data(puechabonsp)
+#' locs <- puechabonsp$relocs
+#' xy <- coordinates(locs)
+#' df <- as.data.frame(locs)
+#' da <- as.character(df$Date)
+#' da <- as.POSIXct(strptime(as.character(df$Date),"%y%m%d", tz="Europe/Paris"))
+#' litr <- as.ltraj(xy, da, id = id)
+#' out1<-loop(litr)
+#' mean_weight<-mosaic_network(out1, index=2, sc=T, fun=mean) #Perform mean weight (not-interpolated)
+#' plot(mean_weight)
+mosaic_network<-function(ls, index=2, sc=T, fun=mean){
+layers<-lapply(ls, function(x) x[[index]])
+if(sc) {lapply(layers, scale)}
+names(layers)[1:2]<-c("x", "y")
+layers$fun<-fun
+layers$na.rm<-TRUE
+layers_mosaic<-do.call(mosaic, layers)
+return(layers_mosaic)
+}
+
+
+
+#' dot product
+dot<-function(x, ...) {
+  sum(abs(cos(x)), na.rm=T)/(sum(!is.na(x)))
+}
+
+
 
 
 #' Normal mixture model for clustering of node level metrics
 #'
-#' Apply a normal mixture model to a node-level metric 
+#' Apply a normal mixture model to a node-level metric
 #' @param stack An object produce by the function adj2stack
 #' @param id Metric to be used (2=Weight, 3=Degree, 4=Betweenness, 5=Transitivity, 6=Eccentricity)
 #' @param grph Whether resulting classification should be plotted
@@ -189,17 +329,17 @@ clustnet<-function(stack, id=2, nclust=2, grph=T) {
   clip1<-stack[[id]]*clip
   val<-values(clip1)
   valna<-val[!is.na(values(clip1))]
-  clust<-mclust::Mclust(valna, nclust) 
+  clust<-mclust::Mclust(valna, nclust)
   val[!is.na(val)]<-clust$classification
   values(clip)<-val
   if (grph==T) plot(clip)
-  return(list(clust, clip))  
+  return(list(clust, clip))
 }
 
 
 #' Sample quantile of distance for ltraj object
 #'
-#' Wrapper function that extract the sample quantile of distance 
+#' Wrapper function that extract the sample quantile of distance
 #' @param x A ltraj object
 #' @param p Probability, default=0.5 (median)
 #' @keywords ltraj
@@ -212,13 +352,13 @@ clustnet<-function(stack, id=2, nclust=2, grph=T) {
 quant<-function(x, p=0.5) {quantile(adehabitatLT::ld(x)$dist, probs=p, na.rm=T)}
 
 
-#' Extract occupied cells in a raster object 
+#' Extract occupied cells in a raster object
 #'
-#' Extract only occupied cells in a raster object, 
+#' Extract only occupied cells in a raster object,
 #' @param grid An object generated by the function adj2stack
 #' @param id Metric to be used (2=Weight, 3=Degree, 4=Betweenness, 5=Transitivity, 6=Eccentricity)
 #' @keywords adj2stack
-#' @return A vector 
+#' @return A vector
 #' @export
 #' @examples
 #' traj1<-sim_mov(type="OU", npatches=3, grph=T)
@@ -233,13 +373,13 @@ val<-function(grid, id) {
 }
 
 
-#' Summarize graph-level metrics 
+#' Summarize graph-level metrics
 #'
-#' Summarize graph-level metrics from an object generated by adj2stack 
+#' Summarize graph-level metrics from an object generated by adj2stack
 #' @param grid An object generated by the function adj2stack
 #' @param id Metric to be used (2=Weight, 3=Degree, 4=Betweenness, 5=Transitivity, 6=Eccentricity)
 #' @keywords adj2stack
-#' @return A vector 
+#' @return A vector
 #' @export
 #' @examples
 #' traj1<-sim_mov(type="OU", npatches=3, grph=T)
