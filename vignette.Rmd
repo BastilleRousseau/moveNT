@@ -9,8 +9,8 @@ output:
 
 
 ``` {r eval=T, echo=F, message=F, warning=F}
-library(devtools)
-install_github("BastilleRousseau/moveNT")
+#library(devtools)
+#install_github("BastilleRousseau/moveNT")
 library(moveNT)
 library(adehabitatLT)
 library(raster)
@@ -23,6 +23,15 @@ library(boot)
 library(moveHMM)
 library(mclust)
 library(igraph)
+mosaic_network<-function(ls, index=2, sc=T, fun=mean){
+layers<-lapply(ls, function(x) x[[index]])
+if(sc) {layers<-lapply(layers, scale)}
+names(layers)[1:2]<-c("x", "y")
+layers$fun<-fun
+layers$na.rm<-TRUE
+layers_mosaic<-do.call(mosaic, layers)
+return(layers_mosaic)
+}
 ```
 
 # Simulating movement strategies  - *sim_mov*
@@ -150,5 +159,5 @@ par(mfrow=c(2,2))
 plot(mean_mean_degree, main= "Degree")
 plot(max_max_between, main="Betweenness")
 plot(mean_mean_speed, main="Speed")
-plot(mean_dot_TA, main="Directionality)
+plot(mean_dot_TA, main="Directionality")
 ```
