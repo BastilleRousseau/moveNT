@@ -9,8 +9,8 @@ output:
 
 
 ``` {r eval=T, echo=F, message=F, warning=F}
-#library(devtools)
-#install_github("BastilleRousseau/moveNT")
+library(devtools)
+install_github("BastilleRousseau/moveNT")
 library(moveNT)
 library(adehabitatLT)
 library(raster)

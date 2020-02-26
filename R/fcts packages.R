@@ -206,8 +206,9 @@ loop<-function(traj, res=100 ){
     try(out[[i]][[12]]<-rasterize(points, out[[i]][[1]], pt$abs.angle, fun=mean))
     try(out[[i]][[13]]<-rasterize(points, out[[i]][[1]], pt$rel.angle, fun=dot))
     cat(id[i], '\n')
+    names(out[[i]])[11:13]<-c("Speed", "Abs angle","DotP")
   }
-  names(out)[11:13]<-c("Speed", "Abs angle","DotP")
+
   return(out)
   }
 
