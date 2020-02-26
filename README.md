@@ -4,7 +4,7 @@
 
 This is the development area for the package `moveNT`, which provides a series of functions to analyze movement data using Network Theory. 
 
-*References*: To be submitted. 
+*References*: Bastille-Rousseau, G., Douglas-Hamilton, I., Blake, S., Northrup, J., Wittemyer, G. (2018) Applying network theory to animal movements to identify properties of landscape space use. Ecological Applications. 
 
 For questions: gbr |at| colostate.edu
 
