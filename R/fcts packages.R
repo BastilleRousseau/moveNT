@@ -17,7 +17,7 @@
 
 #' Simulation of patch-based movement trajectory
 #'
-#' Simulate a movement trajectory with user defined number of patches and interpatch movement
+#' Simulate a movement trajectory with a user defined number of patches and interpatch movement
 #' @param type whether movement within patches should be based on a 2states process (from package moveHMM) or a Bivariate Ornstein-Uhlenbeck process (OU) (from package adehabitatLT)
 #' @param npatches Number of patches, default=5
 #' @param ratio Ratio (in percent) of locations associated to interpatch movement, default=5
@@ -81,15 +81,14 @@ sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, nco
 }
 
 
-
 #' Generation of adjacency matrix from movement data
 #'
 #' Transform an ltraj object to an adjacency matrix using a user-specified grid size
 #' @param mov Movement trajectory, need to be a ltraj object
-#' @param res Grid size
+#' @param res Grid size (based on coordinate system of movement trajectory)
 #' @param grid User specified grid (a raster), needs to have a larger extent than the movement trajectory
 #' @keywords adj2stack
-#' @return A list of object containing the adjacency matrix, the grid use, and patch/corridor identification (only useful if sim_mov was used)
+#' @return A list of objects containing the adjacency matrix, the grid use, and patch/corridor identification (only useful if sim_mov was used)
 #' @export
 #' @examples
 #' traj1<-sim_mov(type="OU", npatches=3, grph=T)
@@ -176,9 +175,9 @@ adj2stack<-function(adjmov, grph=T, mode="directed", weighted=T, ...) {
 
 #' Looping over all individuals
 #'
-#' Extract adjancency matrix and calculate network metrics for all individuals in a trajectory object. Also calculate mean speed, mean direction, and dot product.
-#' @param traj An object produce by the function adj2stack
-#' @param res Grid size
+#' Extract the adjancency matrix and calculate network metrics for all individuals in a trajectory object. Also calculate mean speed, mean direction, and dot product of turning angles
+#' @param traj An object produce by the function adehabitatLT with multiple individuals
+#' @param res Grid size, will be apply to all individuals
 #' @keywords adj2stack traj2adj
 #' @return A list object containing a raster stack object for each individual
 #' @export
@@ -208,21 +207,22 @@ loop<-function(traj, res=100 ){
     try(out[[i]][[13]]<-rasterize(points, out[[i]][[1]], pt$rel.angle, fun=dot))
     cat(id[i], '\n')
   }
+  names(out)[11:13]<-c("Speed", "Abs angle","DotP")
   return(out)
   }
 
 #' Interpolation based on movement steps for all individuals
 #'
-#' Use movement steps to interpolate raster. User can extract the mean or max when multiple steps overlap in a single pixel. Function need to be applied followign the loop function.  This process is very slow
+#' Use movement steps to linearly interpolate raster produced by loop. User can select if the mean or max is taken when multiple steps overlap in a single pixel. Function need to be applied following the loop function.  This process is very slow.
 #' @param traj An object produce by the function adj2stack
 #' @param ls An object produced by the loop
 #' @param wei Whether mean or max should be used for weight (default = mean)
 #' @param deg Whether mean or max should be used for degree (default = mean)
 #' @param bet Whether mean or max should be used for betweeness (default = max)
 #' @param spe Whether mean or max should be used for speed (default = mean)
-#' @param dt Whether mean, max, or dot produc should be used for turning angle (default = dot)
+#' @param dt Whether mean, max, or dot product should be used for turning angle (default = dot)
 #' @keywords adj2stack traj2adj loop
-#' @return A list object containing a raster stack object for each individual
+#' @return A list of object containing a raster stack object for each individual
 #' @export
 #' @examples
 #' data(puechabonsp)
@@ -258,15 +258,15 @@ for (i in 1:length(id)) {
 return(out_fill)}
 
 
-#' Mosaic individuals together for a given variable
+#' Mosaic (combine) individual raster together for a given variable
 #'
 #' Use output of loop or interpolation and combine all individuals (mosaic) together using the mean or max values.
 #' @param ls An object produced by the loop or interpolate functions
 #' @param index Index indicating which layer to take in the stack
 #' @param sc Whether to scale all individual rasters (default = TRUE)
 #' @param fun Whether mean or max should be used as the mosaic function (default = mean)
-#' @keywords adj2stack traj2adj loop
-#' @return A list object containing a raster stack object for each individual
+#' @keywords adj2stack traj2adj loop interpolation
+#' @return A raster layer object.
 #' @export
 #' @examples
 #' data(puechabonsp)
@@ -281,7 +281,7 @@ return(out_fill)}
 #' plot(mean_weight)
 mosaic_network<-function(ls, index=2, sc=T, fun=mean){
 layers<-lapply(ls, function(x) x[[index]])
-if(sc) {lapply(layers, scale)}
+if(sc) {layers<-lapply(layers, scale)}
 names(layers)[1:2]<-c("x", "y")
 layers$fun<-fun
 layers$na.rm<-TRUE
@@ -299,14 +299,14 @@ dot<-function(x, ...) {
 
 
 
-#' Normal mixture model for clustering of node level metrics
+#' Normal mixture model for clustering of single node level metric
 #'
-#' Apply a normal mixture model to a node-level metric
-#' @param stack An object produce by the function adj2stack
+#' Apply a normal mixture model to a single node-level metric
+#' @param stack An object produce by the function adj2stack (not compatible with loop or interpolation)
 #' @param id Metric to be used (2=Weight, 3=Degree, 4=Betweenness, 5=Transitivity, 6=Eccentricity)
 #' @param grph Whether resulting classification should be plotted
 #' @keywords adj2stack traj2adj Mclust
-#' @return A list object containing a Mclust object and a raster object
+#' @return A list of object containing a Mclust object and a raster object
 #' @export
 #' @examples
 #' traj1<-sim_mov(type="OU", npatches=3, grph=T)
@@ -339,7 +339,7 @@ clustnet<-function(stack, id=2, nclust=2, grph=T) {
 
 #' Sample quantile of distance for ltraj object
 #'
-#' Wrapper function that extract the sample quantile of distance
+#' Wrapper function that extract the sample quantile of distance of a trajectory object
 #' @param x A ltraj object
 #' @param p Probability, default=0.5 (median)
 #' @keywords ltraj
@@ -377,7 +377,6 @@ val<-function(grid, id) {
 #'
 #' Summarize graph-level metrics from an object generated by adj2stack
 #' @param grid An object generated by the function adj2stack
-#' @param id Metric to be used (2=Weight, 3=Degree, 4=Betweenness, 5=Transitivity, 6=Eccentricity)
 #' @keywords adj2stack
 #' @return A vector
 #' @export
@@ -385,7 +384,6 @@ val<-function(grid, id) {
 #' traj1<-sim_mov(type="OU", npatches=3, grph=T)
 #' stck<-adj2stack(traj2adj(traj1, res=quant(traj1)), grph=T)
 #' graphmet(stck)
-
 
 graphmet<-function(grid) {
  values(grid[[8:11]])[1,]

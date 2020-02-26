@@ -1,16 +1,16 @@
 ---
 title: "Vignette moveNT"
 author: "Guillaume Bastille-Rousseau"
-date: "April 18, 2017"
+date: "February 26, 2020"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 
 ``` {r eval=T, echo=F, message=F, warning=F}
-library(devtools)
-install_github("BastilleRousseau/moveNT")
+#library(devtools)
+#install_github("BastilleRousseau/moveNT")
 library(moveNT)
 library(adehabitatLT)
 library(raster)
@@ -48,7 +48,7 @@ seden<-sim_mov(type="OU", npatches=10, spacecore=12, ratio=3, nswitch=150, ncore
 
 # Converting movement to adjacency matrix  - *traj2adj*
 
-The function *traj2adj* converts a trajectory object of class *ltraj* to an adjacency matrix. This is done by overlapping a grid over the relocation data and tallying the number of transitions among each pixel. Users need to specify the grid size, which can be based on distance travelled. The function *quant* is a wrapper that allows to sample a quantile of step length distribution from a *ltraj* object. Output produced by *traj2adj* is a list containing the adjacency matrix, the grid used (raster format), and a raster indicating pixel numbers that are occupied. These rasters are used by other functions such as *adj2stack* and *clustnet*. <br> <br>
+The function *traj2adj* converts a trajectory object of class *ltraj* to an adjacency matrix. This is done by overlapping a grid over the relocation data and tallying the number of transitions among each pixel. Users need to specify the grid size, which can be based on distance travelled. The function *quant* is a wrapper that allows to estimate quantiles of step length distribution from a *ltraj* object. Output produced by *traj2adj* is a list containing the adjacency matrix, the grid used (raster format), and a raster indicating pixel numbers that are occupied. These rasters are used by other functions such as *adj2stack* and *clustnet*. <br> <br>
 \newline
 
 ``` {r eval=T}
@@ -101,6 +101,54 @@ plot(clust3[[2]])
 ```
 
 
+# Looping over all individuals *loop*
+
+The function *loop* is a wrapper of *traj2adj* and *adj2stack* applied to all individuals within a trajectory. The function will keep the same grid for all individuals. The user simply need to specify the trajectory object and the grid size. The loop function also adds additional movement properties regarding speed, absolute angle, and turning angle. 
+
+
+``` {r eval=T}
+data(albatross) #Load a traj object from adehabitatLT
+out1<-loop(albatross, res=35000)
+plot(out1[[1]]) #Plot the first individual
+```
 
 
 
+# Mosaic individual
+
+Even if the the function *loop* perform the analysis forevery individuals the outputs produced are at the individual-level. The function *mosaic_network* can combine the different individual levels into a single raster representation. When multiple individuals overlap, the function apply a function (mean or max) to calculate a population-level value for that pixel. To use the function, the user needs to specify which variable to mosaic (using index), whether to scale the individual layers (recommended) and the function to apply. We recommend to use mean for degree and weight and max for the betweenness. 
+
+``` {r eval=T}
+mean_weight<-mosaic_network(out1, index=2, sc=T, fun=mean) #Perform mean weight (not-interpolated)
+
+#writeRaster(...
+
+mean_degree<-mosaic_network(out1, index=4, sc=T, fun=mean) #Perform mean weight (not-interpolated)
+
+
+max_between<-mosaic_network(out1, index=5, sc=T, fun=max) #Perform mean weight (not-interpolated)
+
+par(mfrow=c(1,3))
+plot(mean_weight, main="Weight")
+plot(mean_degree, main="Degree")
+plot(max_between, main="Betweenness")
+```
+
+
+# Linear interpolation 
+As can be seen in the last plot produced, one of the limitation of the current approach is that it creates gaps in areas where no locations are observed (only pixels with gps locations in them have values). This can sometime limit interpretability or the visual appeal of the maps produced. To assist with this, we created a linear interpolation approach that can be applied at the individual level network calculation (i.e. after *loop*). The interpolation linearly interpolate each step (i.e. straight line) and assign the network metric of each starting location to the whole step. When multiples overlap in a pixel, a function is applied to summarize these steps (e.g. mean or max). This function will take an output from *loop* and performed the interpolation for five metrics (weight, degree, betweenness, speed, and turning angles). We recommend to take the mean for weight, degree, betweenness, and speed, the max for betweenness, and the dot-product for the turning angles (default).   
+
+``` {r eval=T}
+data(albatross) #Load a traj object from adehabitatLT
+out1<-loop(albatross, res=35000)
+out2<-interpolation(albatross, out1) #This is very slow, more than 5 minutes
+mean_mean_degree<-mosaic_network(out2, index=2, sc=T, fun=mean)
+max_max_between<-mosaic_network(out2, index=3, sc=T, fun=max)
+mean_mean_speed<-mosaic_network(out2, index=4, sc=T, fun=mean)
+mean_dot_TA<-mosaic_network(out2, index=5, sc=T, fun=mean)
+par(mfrow=c(2,2))
+plot(mean_mean_degree, main= "Degree")
+plot(max_max_between, main="Betweenness")
+plot(mean_mean_speed, main="Speed")
+plot(mean_dot_TA, main="Directionality)
+```
