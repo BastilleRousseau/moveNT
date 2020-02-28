@@ -15,7 +15,7 @@ quant(x, p = 0.5)
 A vector of length p
 }
 \description{
-Wrapper function that extract the sample quantile of distance
+Wrapper function that extract the sample quantile of distance of a trajectory object
 }
 \examples{
 traj1<-sim_mov(type="OU", npatches=3, grph=T)

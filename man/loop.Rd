@@ -7,15 +7,15 @@
 loop(traj, res = 100)
 }
 \arguments{
-\item{traj}{An object produce by the function adj2stack}
+\item{traj}{An object produce by the function adehabitatLT with multiple individuals}
 
-\item{res}{Grid size}
+\item{res}{Grid size, will be apply to all individuals}
 }
 \value{
 A list object containing a raster stack object for each individual
 }
 \description{
-Extract adjancency matrix and calculate network metrics for all individuals in a trajectory object. Also calculate mean speed, mean direction, and dot product.
+Extract the adjancency matrix and calculate network metrics for all individuals in a trajectory object. Also calculate mean speed, mean direction, and dot product of turning angles
 }
 \examples{
 data(puechabonsp)

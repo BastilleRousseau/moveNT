@@ -12,7 +12,7 @@
 # path <- find.package(pack)
 # system(paste(shQuote(file.path(R.home("bin"), "R")),"CMD", "Rd2pdf", shQuote(path)))
 #
-
+#
 
 
 #' Simulation of patch-based movement trajectory

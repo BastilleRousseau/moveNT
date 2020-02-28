@@ -41,7 +41,7 @@ sim_mov(type = c("2states", "OU"), npatches = 5, ratio = 5,
 A ltraj (adehabitatLT) object
 }
 \description{
-Simulate a movement trajectory with user defined number of patches and interpatch movement
+Simulate a movement trajectory with a user defined number of patches and interpatch movement
 }
 \examples{
 traj1<-sim_mov(type="OU", npatches=3, grph=T)

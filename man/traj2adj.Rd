@@ -9,12 +9,12 @@ traj2adj(mov, res = 100, grid = NULL)
 \arguments{
 \item{mov}{Movement trajectory, need to be a ltraj object}
 
-\item{res}{Grid size}
+\item{res}{Grid size (based on coordinate system of movement trajectory)}
 
 \item{grid}{User specified grid (a raster), needs to have a larger extent than the movement trajectory}
 }
 \value{
-A list of object containing the adjacency matrix, the grid use, and patch/corridor identification (only useful if sim_mov was used)
+A list of objects containing the adjacency matrix, the grid use, and patch/corridor identification (only useful if sim_mov was used)
 }
 \description{
 Transform an ltraj object to an adjacency matrix using a user-specified grid size

@@ -2,22 +2,22 @@
 % Please edit documentation in R/fcts packages.R
 \name{clustnet}
 \alias{clustnet}
-\title{Normal mixture model for clustering of node level metrics}
+\title{Normal mixture model for clustering of single node level metric}
 \usage{
 clustnet(stack, id = 2, nclust = 2, grph = T)
 }
 \arguments{
-\item{stack}{An object produce by the function adj2stack}
+\item{stack}{An object produce by the function adj2stack (not compatible with loop or interpolation)}
 
 \item{id}{Metric to be used (2=Weight, 3=Degree, 4=Betweenness, 5=Transitivity, 6=Eccentricity)}
 
 \item{grph}{Whether resulting classification should be plotted}
 }
 \value{
-A list object containing a Mclust object and a raster object
+A list of object containing a Mclust object and a raster object
 }
 \description{
-Apply a normal mixture model to a node-level metric
+Apply a normal mixture model to a single node-level metric
 }
 \examples{
 traj1<-sim_mov(type="OU", npatches=3, grph=T)

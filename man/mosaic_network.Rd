@@ -2,7 +2,7 @@
 % Please edit documentation in R/fcts packages.R
 \name{mosaic_network}
 \alias{mosaic_network}
-\title{Mosaic individuals together for a given variable}
+\title{Mosaic (combine) individual raster together for a given variable}
 \usage{
 mosaic_network(ls, index = 2, sc = T, fun = mean)
 }
@@ -16,7 +16,7 @@ mosaic_network(ls, index = 2, sc = T, fun = mean)
 \item{fun}{Whether mean or max should be used as the mosaic function (default = mean)}
 }
 \value{
-A list object containing a raster stack object for each individual
+A raster layer object.
 }
 \description{
 Use output of loop or interpolation and combine all individuals (mosaic) together using the mean or max values.
@@ -34,5 +34,6 @@ mean_weight<-mosaic_network(out1, index=2, sc=T, fun=mean) #Perform mean weight 
 plot(mean_weight)
 }
 \keyword{adj2stack}
+\keyword{interpolation}
 \keyword{loop}
 \keyword{traj2adj}

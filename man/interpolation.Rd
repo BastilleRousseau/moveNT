@@ -20,13 +20,13 @@ interpolation(traj, ls, wei = mean, deg = mean, bet = max,
 
 \item{spe}{Whether mean or max should be used for speed (default = mean)}
 
-\item{dt}{Whether mean, max, or dot produc should be used for turning angle (default = dot)}
+\item{dt}{Whether mean, max, or dot product should be used for turning angle (default = dot)}
 }
 \value{
-A list object containing a raster stack object for each individual
+A list of object containing a raster stack object for each individual
 }
 \description{
-Use movement steps to interpolate raster. User can extract the mean or max when multiple steps overlap in a single pixel. Function need to be applied followign the loop function.  This process is very slow
+Use movement steps to linearly interpolate raster produced by loop. User can select if the mean or max is taken when multiple steps overlap in a single pixel. Function need to be applied following the loop function.  This process is very slow.
 }
 \examples{
 data(puechabonsp)
