@@ -391,3 +391,256 @@ graphmet<-function(grid) {
 }
 
 
+
+
+######################
+### Movescape functions
+######################
+
+
+#' Convert a list of adj2stack object to a data.frame for clustering
+#'
+#' Convert output of loop function to a data.frame.
+#' @param traj The trajectory used in loop (a traj object)
+#' @param grid The output of the loop function
+#' @keywords adj2stack traj2adj loop
+#' @return A data.frame object.
+#' @export
+#' @examples
+#' data(albatross)
+#' grid<-loop(albatross, 35000)
+#' table_grid<-table_cluster(albatross, grid)
+#' head(table_grid)
+table_cluster<-function(traj, grid) {
+  id<-unique(id(traj))
+  if(length(id)!=length(grid)) {stop("traj and grid don't have the same number of individuals")}
+  out<-data.frame()
+  for (i in 1:length(id)) {
+    tt1<-data.frame(values(grid[[i]]))
+    tt3<-data.frame(na.omit(tt1))
+    tt3$ID<-id[i]
+    out<-rbind(out, tt3)
+  }
+  names(out)[11:13]<-c("Speed", "Abs angle","DotP")
+  return(out)
+}
+
+
+#' Individual-level clustering of movement metrics
+#'
+#' Perform individual-level clustering (first step) of movement metrics. This function uses the output of table_cluster and perform a mixture-model. Users can select which variables will be used and the maximum number of clusters. See also mclust
+#' @param table An output from the table_cluster function
+#' @param max.n.clust The maximum number of clusters to test, see the documentation for mclust for more information. Default = 8.
+#' @param modelname The model structure of the clustering, see the documentation for mclust for more information. Default is equal mean and variance for each clusters (EEV).
+#' @param vars The variable to be included. Default = c("Weight", "Degree", "Betweenness", "Speed", "DotP")
+#' @keywords adj2stack traj2adj loop table_cluster pop_clust
+#' @return A list object with each element representing an individual.
+#' @export
+#' @examples
+#' data(albatross)
+#' grid<-loop(albatross, 35000)
+#' table_grid<-table_cluster(albatross, grid)
+#' ls_ind<-ind_clust(table_grid, max.n.clust=8)
+#' table(unlist(lapply(ls_ind, function(x) x$G)))
+ind_clust<-function(table, max.n.clust=8, modelname="EEV", vars=c("Weight", "Degree", "Betweenness", "Speed", "DotP")) {
+  if(require("mclust")){
+    print("mclust is loaded correctly")
+  } else {
+    print("trying to install mclust")
+    install.packages("mclust")
+    if(require(mclust)){
+      print("mclust installed and loaded")
+    } else {
+      stop("could not install mclust")
+    }
+  }
+  id<-unique(table$ID)
+  ls<-list()
+  for (i in 1:length(id)) {
+    tt<-scale(table[table$ID==id[i],vars])
+    try(ls[[i]]<-Mclust(tt, G=2:max.n.clust, modelNames=modelname))
+    print(id[i])
+  }
+  return(ls)
+}
+
+#' Population-level clustering of movement metrics
+#'
+#' Combine individual-level clustering of movement metrics into a population-level clustering (second step). Users can  the maximum number of clusters. See also mclust
+#' @param traj The trajectory object
+#' @param ls_ind Individual-level clustering object, the output of ind_clust.
+#' @param max.n.clust The maximum number of clusters to test, see the documentation for mclust for more information. Default = 8.
+#' @keywords adj2stack traj2adj loop table_cluster ind_clust
+#' @return A list object with each element representing an individual.
+#' @export
+#' @examples
+#' data(albatross)
+#' grid<-loop(albatross, 35000)
+#' table_grid<-table_cluster(albatross, grid)
+#' ls_ind<-ind_clust(table_grid, max.n.clust=8)
+#' pop<-pop_clust(albatross, ls_ind)
+#' pop[[1]]$parameters$mean
+#' pop[[1]]$parameters$pro
+pop_clust<-function(traj, ls, max.n.clust=8) {
+  id<-unique(id(traj))
+  nvar<-nrow(ls[[1]]$parameters$mean)
+  coef<-data.frame()
+  for (i in 1:length(id)) {
+    G<-ls[[i]]$G
+    gg<-data.frame(cbind(t(ls[[i]]$parameters$mean), ls[[i]]$parameters$pro, rep(id[i], G))   )
+    coef<-rbind(coef, gg)
+  }
+  coef[,-ncol(coef)] <- sapply(coef[-ncol(coef)],function(x) as.numeric(as.character(x)))
+  names(coef)[nvar+1]<-"Prop"
+  names(coef)[nvar+2]<-"ID"
+  clust<-Mclust(coef[,1:nvar], G=1:max.n.clust)
+  coef$clust<-clust$classification
+  out<-list(clust, coef)
+  return(out)
+}
+
+
+
+#' Back-association of population-level clustering to individual clusters
+#'
+#' Generate individual-level rasters of population-level clustering. For each individual, the fuction generate a raster stack containing a raster of the most likely cluster, and several rasters giving the probability of observing each cluster.
+#' @param grid The output of the loop function
+#' @param pop_clust The output of the pop_clust function
+#' @param ind_clust The output of the ind_clust function
+#' @param table The output of table_cluster
+#' @keywords adj2stack traj2adj loop table_cluster ind_clust pop_clust
+#' @return A list of raster stack object.
+#' @export
+#' @examples
+#' data(albatross)
+#' grid<-loop(albatross, 35000)
+#' table_grid<-table_cluster(albatross, grid)
+#' ls_ind<-ind_clust(table_grid, max.n.clust=8)
+#' pop<-pop_clust(albatross, ls_ind)
+#' clust_stack<-clust_stack(grid, pop, ls_ind, table_grid)
+#' plot(clust_stack[[1]])
+clust_stack<-function(grid, pop_clust, ind_clust, table) {
+  id<-unique(table$ID)
+  coef2<-cbind(pop_clust[[2]], pop_clust[[1]]$z)
+  out_ls<-list()
+  n.clust1<-length(unique(coef2$clust))
+
+  for (i in 1:length(grid)) {
+    coef3<-coef2[coef2$ID==id[i],]
+    n.clust<-length(coef3$clust)
+    cl<-((coef3$clust))
+    class<-data.frame(cbind(1:length(cl), cl))
+    prop<-coef3[,as.character(cl)]
+    out2<-table[table$ID==id[i],]
+    out2$clust<-ind_clust[[i]]$classification
+    out2$id<-1:nrow(out2)
+    out2<-merge(out2, class, by.x="clust", by.y="V1", sort=F)
+    out2<-out2[order(out2$id),]
+    out2<-cbind(out2, ind_clust[[i]]$z)
+
+    for (j in 1:nrow(out2)) {
+      out2[j,(ncol(out2)-n.clust+1):ncol(out2)]<- out2[j,(ncol(out2)-n.clust+1):ncol(out2)]*prop[out2$clust[j],] #Multiply the two probability
+    }
+
+    dd<-values(grid[[i]])
+    dd2<-apply(dd, 1, function(x) max(is.na(x)))
+    ind<-which(dd2==0)
+    r0<-grid[[i]][[1]]
+    values(r0)<-0
+    tt <- values(r0)
+    gr<-stack(r0)
+    tt[ind]<-out2$cl
+    gr[[1]]<-setValues(gr[[1]],tt)
+
+    for (z in 2:(n.clust1+1)) { gr[[z]]<-r0 }
+    for (k in 1:n.clust) {
+      tt[ind]<-out2[,(ncol(out2)-n.clust)+k]
+      gg<-setValues(gr[[1]],tt)
+      gr[[cl[k]+1]]<-mosaic(gr[[cl[k]+1]], gg, fun=max)
+    }
+    names(gr)<-c("Clust", paste("Prop", 1:n.clust1, sep=""))
+    out_ls[[i]]<-gr
+    print(id[i])
+  }
+  return(out_ls)
+}
+
+#' Population-level single-use maps of each cluster
+#'
+#' Produce maps (raster) indicating if at least one individual is using a pixel as a given cluster
+#' @param clust_stack The output of clust_stack
+#' @keywords adj2stack traj2adj loop table_cluster ind_clust
+#' @return A stack object with each raster showing use of each cluster
+#' @export
+#' @examples
+#' data(albatross)
+#' grid<-loop(albatross, 35000)
+#' table_grid<-table_cluster(albatross, grid)
+#' ls_ind<-ind_clust(table_grid, max.n.clust=8)
+#' pop<-pop_clust(albatross, ls_ind)
+#' clust_stack<-clust_stack(grid, pop, ls_ind, table_grid)
+#' pop_stack<-pop_stack(clust_stack)
+#' plot(pop_stack)
+pop_stack<-function(clust_stack) {
+  n.clust<-length(names(clust_stack[[1]]))-1
+  ls<-lapply(clust_stack, function(x) x[[1]])
+  fct<-function(rast, val) {
+    values(rast) <- ifelse(values(rast) %in% c(val), 1, 0) # just replace
+    return(rast)
+  }
+  ls1<-list()
+  for (i in 1:n.clust) {ls1[[i]]<-lapply(ls, function(x) fct(x, i)) }
+
+  #Mosaic all together
+  x <- ls1[[1]]
+  names(x)[1:2] <- c('x', 'y')
+  x$fun <- max
+  x$na.rm <- TRUE
+  y <- do.call(mosaic, x)
+  out<-stack(y)
+  for (i in 2:n.clust) {
+    x <- ls1[[i]]
+    names(x)[1:2] <- c('x', 'y')
+    x$fun <- max
+    x$na.rm <- TRUE
+    y <- do.call(mosaic, x)
+    out[[i]]<-y
+  }
+  names(out)<-paste("Clust", c(1:n.clust), sep="_")
+  return(out)
+}
+
+#' Population-level multi-use map
+#'
+#' Produce a single map (raster) indicating all types of use found in a cluster.
+#' @param clust_stack The output of clust_stack
+#' @keywords adj2stack traj2adj loop table_cluster ind_clust
+#' @return A stack object with each raster showing use of each cluster
+#' @export
+#' @examples
+#' data(albatross)
+#' grid<-loop(albatross, 35000)
+#' table_grid<-table_cluster(albatross, grid)
+#' ls_ind<-ind_clust(table_grid, max.n.clust=8)
+#' pop<-pop_clust(albatross, ls_ind)
+#' clust_stack<-clust_stack(grid, pop, ls_ind, table_grid)
+#' pop_overl<-pop_overl(clust_stack)
+#' table(values(pop_overl))
+#' plot(pop_overl)
+pop_overl<-function(clust_stack) {
+  ls<-lapply(clust_stack, function(x) x[[1]])
+  ff<-function(x, na.rm=T) {
+    if (na.rm) {x<-na.omit(x)}
+    x1<-x
+    x1<-x1[!duplicated(x1)]
+    x1<-sort(x1)
+    as.numeric(paste(x1, collapse=""))
+  }
+  x <- ls
+  names(x)[1:2] <- c('x', 'y')
+  x$fun <- ff
+  x$na.rm <- TRUE
+  y <- do.call(mosaic, x)
+}
+
+

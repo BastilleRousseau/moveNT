@@ -1,0 +1,83 @@
+---
+title: "Vignette movescape"
+author: "Guillaume Bastille-Rousseau"
+date: "February 26, 2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+``` {r eval=T, echo=F, message=F, warning=F}
+#library(devtools)
+#install_github("BastilleRousseau/moveNT")
+#library(moveNT)
+library(adehabitatLT)
+library(raster)
+library(sp)
+library(mclust)
+library(igraph)
+source("C:/Users/Guillaume/OneDrive/Elephant/Analysis/Network/moveNT/R/fcts packages.R")
+```
+
+This vignette presents a simple workflow to extract the movescape of GPS tracked individuals. We recommend interest readers read the documentation associated to the *moveNT* package.
+
+#A- Data preparation
+For simplification, we initiate the analysis with a simple trajectory object of class *ltraj*. This trajectory object is freely available in the *adehabitatLT* package and contains the GPS locations of 6 albatross. We will first use the *loop* function in *moveNT*, which is a wrapper function extracting the movement metrics for each individual. We then use the function *table_grid* to convert the*loop* object into a *data.frame*. 
+``` {r eval=T}
+library(moveNT)
+data(albatross)
+grid<-loop(albatross, 35000)
+#Stack showing all metrics calculated for the first albatros
+plot(grid[[1]])
+
+table_grid<-table_cluster(albatross, grid)
+#Showing the first few rows of the table created. 
+head(table_grid)
+```
+
+#B- Individual-level clustering 
+The first step of the analysis is to apply the clustering to each individual. *ind_clust* apply a mixture model to each individual. It is possible to specify the maximum number of clusters (here 8) and also the covariates to use for the clustering, but the function automatically selects the optimal number of clusters (based on BIC). In our case, 2 individuals had 6 clusters, 2 had seven, and 2 had eight clusters. *ls_ind* simply return a list object with each element representing a single individual. 
+
+``` {r eval=T}
+ls_ind<-ind_clust(table_grid, max.n.clust=8)
+#Showing the number of individuals with 6, 7, and 8 clusters 
+#   (i.e. no individual had less than 6 clusters)
+table(unlist(lapply(ls_ind, function(x) x$G)))
+
+```
+
+#C- Population-level clustering
+After performing the individual clustering, a second clustering is applied via *pop_clust*. This second clustering takes the ouptut of *ind_clust* and will identify which individual clusters could be considered as one population-level clusters. The function automatically selects the optimal number of clusters (based on BIC). It is possible for two clusters from the same individual to be in the same population-level cluster. Likewise, it is possible that a population level cluster does not have all individuals. Here, 3 different population clusters were calculated. The second line extract the center (mean) of each cluster which is helpful in interpreting their meaning. The first cluster was heavily used (weight), well connected (degree), and important for connectivity (betweenness), but albatross were moving slowly and not linearly in them. The second cluster was a cluster with intermediate use, not important for connectivity and still with meandering movement. The third cluster was important for connectivty and albatross were  moving fast and linearly in it. We also extract the proportion of each cluster. 
+``` {r eval=T}
+pop<-pop_clust(albatross, ls_ind)
+#Paremeters associated to each cluster (i.e. center)
+pop[[1]]$parameters$mean
+
+#Proportion of each cluster (how frequent it is spatially)
+pop[[1]]$parameters$pro
+```
+
+
+#D- Mapping and results export 
+After performing the population level cluster, the function  *clust_stack* recombines the individual and population level clustering and produce a *stack* object for each individual albatross showing the most likely cluster, and also the probability of observing each cluster (uncertainty) in any given pixel. This individual level data (but which contains the population level clustering) can be used in a regression based analysis as presented in the manuscript or simply mapped. We developed two functions to produce these maps. *pop_stack* generate for each population cluster, rasters showing if at least one individual is using this pixel for this specific cluster. *pop_overl* display for each pixel all potential use observed, for example a pixel having the value *123* will have at least one individual using this pixel as cluster 1, another individual using it as 2, and another individual as 3. We show how frequent each combination are using the *table* function. These object can be exported to be used in other software using the *writeRaster* function. 
+
+``` {r eval=T}
+clust_stack<-clust_stack(grid, pop, ls_ind, table_grid)
+#Plotting the stack for the first individual
+plot(clust_stack[[1]])
+
+pop_stack<-pop_stack(clust_stack)
+#Plotting the stack object. Each raster shows if at least one 
+# individual is using the pixel as a specific cluster. 
+plot(pop_stack)
+#writeRaster(pop_stack, "Network.tif", format="GTiff",  bylayer=T, suffix="names", overwrite=T)
+
+pop_overl<-pop_overl(clust_stack)
+#Table showing how frequent each pixels is. A value of 123 indicates
+# that at least one individual is using the pixel as 1, one individual 
+# is using it as 2, and one as 3
+table(values(pop_overl))
+#Plotting of the overlap raster. The legend makes it hard to see, 
+# but values range from 0 (no animal present) to 123 
+# (each type of used is observed in the pixel). 
+plot(pop_overl)
+```
