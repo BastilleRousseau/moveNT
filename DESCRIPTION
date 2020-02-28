@@ -1,7 +1,7 @@
 Package: moveNT
 Title: An R package for the analysis of movement data using network theory
 Version: 0.0.0.9000
-Authors@R: person("Guillaume", "Bastille-Rousseau", email = "gbr@colostate.edu", role = c("aut", "cre"))
+Authors@R: person("Guillaume", "Bastille-Rousseau", email = "gbr@siu.edu", role = c("aut", "cre"))
 Description: This package provides a series of functions to analyse movement data using network theory.
 Depends: R (>= 3.3.2), raster, sp, adehabitatLT
 License: GPL (>=3)

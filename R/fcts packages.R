@@ -1,18 +1,18 @@
-# #### Package creation
-# install.packages("devtools")
+# # #### Package creation
+# # install.packages("devtools")
 # library("devtools")
 # devtools::install_github("klutometis/roxygen")
 # library(roxygen2)
 # create("moveNT")
 # setwd("./moveNT")
 # document()
-#
-# #Create pdf
+# #
+# # #Create pdf
 # pack <- "moveNT"
 # path <- find.package(pack)
 # system(paste(shQuote(file.path(R.home("bin"), "R")),"CMD", "Rd2pdf", shQuote(path)))
-#
-#
+# #
+# #
 
 
 #' Simulation of patch-based movement trajectory
