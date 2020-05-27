@@ -281,15 +281,14 @@ return(out_fill)}
 #' mean_weight<-mosaic_network(out1, index=2, sc=T, fun=mean) #Perform mean weight (not-interpolated)
 #' plot(mean_weight)
 mosaic_network<-function(ls, index=2, sc=T, fun=mean){
-layers<-lapply(ls, function(x) x[[index]])
-if(sc) {layers<-lapply(layers, scale)}
-names(layers)[1:2]<-c("x", "y")
-layers$fun<-fun
-layers$na.rm<-TRUE
-layers_mosaic<-do.call(mosaic, layers)
-return(layers_mosaic)
+  layers<-lapply(ls, function(x) x[[index]])
+  if(sc==T) {layers<-lapply(layers, raster::scale)}
+  names(layers)[1:2]<-c("x", "y")
+  layers$fun<-fun
+  layers$na.rm<-TRUE
+  layers_mosaic<-do.call(mosaic, layers)
+  return(layers_mosaic)
 }
-
 
 
 #' dot product
