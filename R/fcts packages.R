@@ -188,15 +188,15 @@ adj2stack<-function(adjmov, grph=T, mode="directed", weighted=T, ...) {
 #' df <- as.data.frame(locs)
 #' da <- as.character(df$Date)
 #' da <- as.POSIXct(strptime(as.character(df$Date),"%y%m%d", tz="Europe/Paris"))
-#' litr <- as.ltraj(xy, da, id = id)
+#' litr <- as.ltraj(xy, da, id = df$Name)
 #' out1<-loop(litr)
 loop<-function(traj, res=100 ){
   tt<-SpatialPoints(ld(traj)[,1:2])
   tt1<-apply(coordinates(tt), 2, min)
   tt2<-apply(coordinates(tt), 2, max)
   ras<-raster(xmn=floor(tt1[1]), ymn=floor(tt1[2]),xmx=ceiling(tt2[1]), ymx=ceiling(tt2[2]), res=res)
-  id<-unique(id(traj))
-  id2<-id(traj)
+  id<-unique(adehabitatLT::id(traj))
+  id2<-adehabitatLT::id(traj)
   out<-list()
   for (i in 1:length(id)) {
     try(out[[i]]<-adj2stack(traj2adj(traj[which(id2==id[i])], res=res, grid=ras), grph=F))
@@ -237,8 +237,8 @@ loop<-function(traj, res=100 ){
 #' out2<-interpolation(litr, out1)
 
 interpolation<-function(traj, ls, wei=mean, deg=mean, bet=max, spe=mean, dt=dot) {
-id<-unique(id(traj))
-id2<-id(traj)
+id<-unique(adehabitatLT::id(traj))
+id2<-id(adehabitatLT::traj)
 out_fill<-list()
 pb <- txtProgressBar(min = 1, max = length(id), style = 3)
 for (i in 1:length(id)) {
@@ -411,7 +411,7 @@ graphmet<-function(grid) {
 #' table_grid<-table_cluster(albatross, grid)
 #' head(table_grid)
 table_cluster<-function(traj, grid) {
-  id<-unique(id(traj))
+  id<-unique(adehabitatLT::id(traj))
   if(length(id)!=length(grid)) {stop("traj and grid don't have the same number of individuals")}
   out<-data.frame()
   for (i in 1:length(id)) {
@@ -481,7 +481,7 @@ ind_clust<-function(table, max.n.clust=8, modelname="EEV", vars=c("Weight", "Deg
 #' pop[[1]]$parameters$mean
 #' pop[[1]]$parameters$pro
 pop_clust<-function(traj, ls, max.n.clust=8) {
-  id<-unique(id(traj))
+  id<-unique(adehabitatLT::id(traj))
   nvar<-nrow(ls[[1]]$parameters$mean)
   coef<-data.frame()
   for (i in 1:length(id)) {
@@ -557,7 +557,7 @@ clust_stack<-function(grid, pop_clust, ind_clust, table) {
       gg<-setValues(gr[[1]],tt)
       gr[[cl[k]+1]]<-mosaic(gr[[cl[k]+1]], gg, fun=max)
     }
-    names(gr)<-c("Clust", paste("Prop", 1:n.clust1, sep=""))
+    names(gr)<-c("Clust", paste("Prop", unique(class$cl), sep=""))
     out_ls[[i]]<-gr
     print(id[i])
   }
