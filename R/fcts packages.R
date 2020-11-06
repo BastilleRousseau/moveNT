@@ -140,9 +140,10 @@ traj2adj<-function(mov, res=100, grid=NULL) {
 #' @export
 #' @examples
 #' traj1<-sim_mov(type="OU", npatches=3, grph=T)
-#' stck<-adj2stack(traj2adj(traj1, res=100), grph=T)
+#' stck<-adj2stack(traj2adj(traj1, res=100))
+#' plot(stck)
 
-adj2stack<-function(adjmov, grph=T, mode="directed", weighted=T, ...) {
+adj2stack<-function(adjmov, mode="directed", weighted=T, ...) {
 
   g<-igraph::graph_from_adjacency_matrix(adjmov[[1]], mode=mode, weighted = weighted)
   grid<-stack(adjmov[[3]])
@@ -169,7 +170,7 @@ adj2stack<-function(adjmov, grph=T, mode="directed", weighted=T, ...) {
   grid[[10]]<-setValues(grid[[1]], igraph::edge_density(g))
   grid[[11]]<-setValues(grid[[1]], igraph::modularity(igraph::cluster_walktrap(g)))
   names(grid)<- c("Actual","Weight", "Self-loop", "Degree",  "Betweenness", "Transitivity", "Eccentricity",  "Diameter", "Global transitivity", "Density", "Modularity")
-  if(grph==T) plot(grid[[2:7]])
+  #if(grph==T) plot(grid[[2:7]])
   return(grid)
 }
 
@@ -190,6 +191,7 @@ adj2stack<-function(adjmov, grph=T, mode="directed", weighted=T, ...) {
 #' da <- as.POSIXct(strptime(as.character(df$Date),"%y%m%d", tz="Europe/Paris"))
 #' litr <- as.ltraj(xy, da, id = df$Name)
 #' out1<-loop(litr)
+#' plot(out1[[1]])
 loop<-function(traj, res=100 ){
   tt<-SpatialPoints(ld(traj)[,1:2])
   tt1<-apply(coordinates(tt), 2, min)
@@ -199,7 +201,7 @@ loop<-function(traj, res=100 ){
   id2<-adehabitatLT::id(traj)
   out<-list()
   for (i in 1:length(id)) {
-    try(out[[i]]<-adj2stack(traj2adj(traj[which(id2==id[i])], res=res, grid=ras), grph=F))
+    try(out[[i]]<-adj2stack(traj2adj(traj[which(id2==id[i])], res=res, grid=ras)))
     pt<-ld(traj[which(id2==id[i])])
     points<-SpatialPoints(pt[,1:2])
     try(out[[i]][[11]]<-rasterize(points, out[[i]][[1]], pt$dist, fun=mean))
@@ -362,7 +364,8 @@ quant<-function(x, p=0.5) {quantile(adehabitatLT::ld(x)$dist, probs=p, na.rm=T)}
 #' @export
 #' @examples
 #' traj1<-sim_mov(type="OU", npatches=3, grph=T)
-#' stck<-adj2stack(traj2adj(traj1, res=quant(traj1)), grph=T)
+#' stck<-adj2stack(traj2adj(traj1, res=quant(traj1)))
+#' plot(stck)
 #' mean(val(stck, 2))
 
 val<-function(grid, id) {

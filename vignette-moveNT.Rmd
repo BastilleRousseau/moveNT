@@ -87,7 +87,7 @@ The function *adj2stack* takes the output of function *traj2adj* and calculates 
 
 ``` {r eval=T}
 # Using multi-patches movement and median distance travelled 
-stck<-adj2stack(adj_patches,grph=T) #Plot the node-level metrics at the same time 
+stck<-adj2stack(adj_patches, grph=F) #Plot the node-level metrics at the same time 
 plot(stck) #Plot also the graph-level metrics (not really useful)
 plot(stck[[3]]) #Plot only one metric (degree)
 graphmet(stck) # Extract graph-level metrics 
@@ -101,8 +101,8 @@ The function *clustnet* applies a normal mixture model to node-level metrics in 
 
 ``` {r eval=T}
 # Using multi-patches movement and median distance travelled 
-clust2<-clustnet(stck, id=3, nclust=2) # Clustering of degree in two groups
-clust3<-clustnet(stck, id=4, nclust=3) #Clustering of betweenness in three groups 
+clust2<-clustnet(stck, id=3, nclust=2, grph=F) # Clustering of degree in two groups
+clust3<-clustnet(stck, id=4, nclust=3, grph=F) #Clustering of betweenness in three groups 
 summary(clust2[[1]])
 plot(clust2[[2]])
 summary(clust3[[1]])
