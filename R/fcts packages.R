@@ -240,7 +240,7 @@ loop<-function(traj, res=100 ){
 
 interpolation<-function(traj, ls, wei=mean, deg=mean, bet=max, spe=mean, dt=dot) {
 id<-unique(adehabitatLT::id(traj))
-id2<-id(adehabitatLT::traj)
+id2<-adehabitatLT::id(traj)
 out_fill<-list()
 pb <- txtProgressBar(min = 1, max = length(id), style = 3)
 for (i in 1:length(id)) {
