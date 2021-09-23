@@ -107,7 +107,7 @@ traj2adj<-function(mov, res=100, grid=NULL) {
   if(!is.null(grid)){ras<-crop(grid, tt)}
   values(ras)<-1:ncell(ras)
   patch<-rasterize(tt, ras, field=mov[,13], fun = function(x, ...) round(mean(x)), na.rm=T)
-   mov$pix_start2<-extract(ras,tt)
+   mov$pix_start2<-raster::extract(ras,tt)
  mov$pix_start<-as.numeric(as.factor(mov$pix_start2))
  tt<-values(patch)
  tt[!is.na(tt)]<-1:max(mov$pix_start, na.rm=T)
@@ -234,6 +234,7 @@ loop<-function(traj, res=100 ){
 #' df <- as.data.frame(locs)
 #' da <- as.character(df$Date)
 #' da <- as.POSIXct(strptime(as.character(df$Date),"%y%m%d", tz="Europe/Paris"))
+#' id <- df$Name
 #' litr <- as.ltraj(xy, da, id = id)
 #' out1<-loop(litr)
 #' out2<-interpolation(litr, out1)
@@ -250,14 +251,16 @@ for (i in 1:length(id)) {
   steps<-SpatialLines(apply(data2, 1, function(r) {
     Lines(list(sp::Line(cbind(r[c(1,3)], r[c(2,4)]))), uuid::UUIDgenerate())
   }))
-  pts<-extract(ls[[i]], data2[,1:2])
+  pts<-raster::extract(ls[[i]], data2[,1:2])
   weight<-rasterize(steps, ls[[i]][[1]], field=pts[,2], fun=wei)
   degree<-rasterize(steps, ls[[i]][[1]], field=pts[,4], fun=deg)
   between<-rasterize(steps, ls[[i]][[1]], field=pts[,5], fun=bet)
   speed<-rasterize(steps, ls[[i]][[1]], field=data2$dist/data2$dt, fun=spe)
   dotp<-rasterize(steps, ls[[i]][[1]], field=data2[,7], fun=dt)
   out_fill[[i]]<-stack(weight, degree, between, speed, dotp)
+  names(out_fill[[i]])<-c("Weight", "Degree", "Betweenness", "Speed", "Dot.product")
   })}
+names(out_fill)<-id
 return(out_fill)}
 
 
@@ -278,6 +281,7 @@ return(out_fill)}
 #' df <- as.data.frame(locs)
 #' da <- as.character(df$Date)
 #' da <- as.POSIXct(strptime(as.character(df$Date),"%y%m%d", tz="Europe/Paris"))
+#' id <- df$Name
 #' litr <- as.ltraj(xy, da, id = id)
 #' out1<-loop(litr)
 #' mean_weight<-mosaic_network(out1, index=2, sc=T, fun=mean) #Perform mean weight (not-interpolated)
