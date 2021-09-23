@@ -564,7 +564,7 @@ clust_stack<-function(grid, pop_clust, ind_clust, table) {
       gg<-setValues(gr[[1]],tt)
       gr[[cl[k]+1]]<-mosaic(gr[[cl[k]+1]], gg, fun=max)
     }
-    names(gr)<-c("Clust", paste("Prop", paste("Prop", 1:n.clust1, sep=""))
+    names(gr)<-c("Clust", paste("Prop", paste("Prop", 1:n.clust1, sep="")))
     out_ls[[i]]<-gr
     print(id[i])
   }
