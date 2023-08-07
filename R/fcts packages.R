@@ -10,7 +10,7 @@
 # # #Create pdf
 # pack <- "moveNT"
 # path <- find.package(pack)
-# system(paste(shQuote(file.path(R.home("bin"), "R")),"CMD", "Rd2pdf", shQuote(path)))
+# system(paste(shQuote(file.path(R.home("bin"), "R")),"CMD", "Rd2pdf", shQuot-e(path)))
 # #
 # #
 
@@ -103,8 +103,8 @@ traj2adj<-function(mov, res=100, grid=NULL) {
   tt<-sp::SpatialPoints(mov[,1:2])
   tt1<-apply(coordinates(tt), 2, min)
   tt2<-apply(coordinates(tt), 2, max)
-  if(is.null(grid)){ras<-raster(xmn=floor(tt1[1]), ymn=floor(tt1[2]),xmx=ceiling(tt2[1]), ymx=ceiling(tt2[2]), res=res)}
-  if(!is.null(grid)){ras<-crop(grid, tt)}
+  if(is.null(grid)){ras<-raster(xmn=floor(tt1[1])-2*res, ymn=floor(tt1[2])-2*res,xmx=ceiling(tt2[1])+2*res, ymx=ceiling(tt2[2])+2*res, res=res)}
+  if(!is.null(grid)){ras<-grid}
   values(ras)<-1:ncell(ras)
   patch<-rasterize(tt, ras, field=mov[,13], fun = function(x, ...) round(mean(x)), na.rm=T)
    mov$pix_start2<-raster::extract(ras,tt)
@@ -196,7 +196,7 @@ loop<-function(traj, res=100 ){
   tt<-SpatialPoints(ld(traj)[,1:2])
   tt1<-apply(coordinates(tt), 2, min)
   tt2<-apply(coordinates(tt), 2, max)
-  ras<-raster(xmn=floor(tt1[1]), ymn=floor(tt1[2]),xmx=ceiling(tt2[1]), ymx=ceiling(tt2[2]), res=res)
+  ras<-raster(xmn=floor(tt1[1])-2*res, ymn=floor(tt1[2])-2*res,xmx=ceiling(tt2[1])+2*res, ymx=ceiling(tt2[2])+2*res, res=res)
   id<-unique(adehabitatLT::id(traj))
   id2<-adehabitatLT::id(traj)
   out<-list()
