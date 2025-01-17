@@ -95,7 +95,6 @@ sim_mov<-function(type=c("2states", "OU"), npatches=5, ratio=5, nswitch=150, nco
 #' adj<-traj2adj(traj1, res=100)
 
 
-
 traj2adj<-function(mov, res=100, grid=NULL) {
 
   mov<-adehabitatLT::ld(mov)
@@ -117,7 +116,8 @@ traj2adj<-function(mov, res=100, grid=NULL) {
   tab<-data.frame(table(mov$trans))
   mov<-merge(mov, tab, by.x="trans", by.y="Var1", all.x=T) # Weights
   mov2<-mov[!duplicated(mov$trans),]
-  mat<-matrix(0, nrow=max(mov2$pix_start,na.rm=T), ncol=max(mov2$pix_end, na.rm=T))
+  nsize<-max(max(mov2$pix_start,na.rm=T),max(mov2$pix_end,na.rm=T) )
+  mat<-matrix(0, nrow=nsize, ncol=nsize)
   for (i in 1:nrow(mov2)) {
     mat[mov2$pix_start[i], mov2$pix_end[i]]<-mov2$Freq[i]
   }
